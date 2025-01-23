@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "/data/mengjin/DeepAtrophyPackage/DeepAtrophy/deepatrophy/src/deepatrophy/PAIIR.py",  // or specify the script path here
+            "args": [
+                "PAIIR",  // Subcommand
+                "--train-pair-spreadsheet", "/data/mengjin/DeepAtrophyPackage/DeepAtrophy/data/resnet50_2020-07-08_12-39train_0135_train_pair_update.csv",
+                "--test-pair-spreadsheet", "/data/mengjin/DeepAtrophyPackage/DeepAtrophy/data/resnet50_2020-07-08_12-39train_0135_test_pair_update.csv" ,
+                "--test-double-pair-spreadsheet", "/data/mengjin/DeepAtrophyPackage/DeepAtrophy/data/resnet50_2020-07-08_12-39train_0135_test.csv",
+                "--workdir", "/data/mengjin/DeepAtrophyPackage/DeepAtrophy/PAIIR" ,
+                "--prefix", "resnet50_2020-07-08_12-39"
+            ],
+            "console": "integratedTerminal"  // Shows output in the VS Code terminal
+        }
+    ]
+}
