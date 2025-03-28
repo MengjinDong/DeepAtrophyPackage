@@ -79,8 +79,6 @@ class PAIIRLauncher:
         # plot PAIIR for each stage, not corrected for age
         self.plot_PAIIR()
 
-        print("finished runnning PAIIRLauncher.run")
-
 
     def read_and_organize(self):
         # from the last five nodes of the model prediction, 

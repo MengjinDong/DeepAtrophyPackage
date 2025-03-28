@@ -175,8 +175,6 @@ class NeckTrimLauncher:
 
     def run(self, args):
 
-        print("run NeckTrimLauncher.run")
-
         trim_neck_rf(args.input_image, args.trimmed_image, workdir=args.workdir, debug=args.debug)
 
 

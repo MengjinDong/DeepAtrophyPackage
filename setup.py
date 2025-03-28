@@ -5,9 +5,9 @@ with open("README.md", "r") as f:
 
 setup(
     name="deepatrophy",
-    version="0.0.3",
+    version="0.0.4",
     description="DeepAtrophy: a Longitudinal MRI Analysis Package for Brain Atrophy Estimation",
-    url='https://github.com/MengjinDong/DeepAtrophy',
+    url='https://github.com/MengjinDong/DeepAtrophyPackage', 
     keywords=['atrophy', 'longitudinal', 'deep learning', 'temporal interence', 'mri'],
     package_dir={"": "src"},
     packages=find_packages("src"),
