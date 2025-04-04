@@ -42,14 +42,11 @@ import csv
 
 def main(args):
 
-    model_names = sorted(name for name in models.__dict__
-    if name.islower() and not name.startswith("__")
-    and callable(models.__dict__[name]))
+    # model_names = sorted(name for name in models.__dict__
+    # if name.islower() and not name.startswith("__")
+    # and callable(models.__dict__[name]))
 
-    best_prec1 = 0
-
-    # Use a tool at comet.com to keep track of parameters used
-    hyper_params = vars(args)
+    global best_prec1 = 0
 
     print("ROOT is ", args.ROOT)
 
@@ -192,8 +189,7 @@ def main_worker(gpu, ngpus_per_node, args):
     test_augment = ['normalize', 'crop']
     eval_augment = ['normalize', 'crop']
 
-    #############################################################################
-    # test-retest analysis
+    ############################################################################
         
     model_pair = longi_models.ResNet_pair(model.modelA, args.num_date_diff_classes)
     torch.cuda.set_device(args.gpu)
@@ -259,19 +255,6 @@ def main_worker(gpu, ngpus_per_node, args):
             shuffle=True,
             num_workers=args.workers, pin_memory=True)
 
-    if args.resume_all:
-        model_name = args.resume_all[:-8]
-
-    else:
-        model_name = save_folder + "_" + time.strftime("%Y-%m-%d_%H-%M")+ \
-                     traingroup[0]
-
-    log_name = (args.ROOT
-                + "/log/"
-                + args.model+ str(args.model_depth)
-                + "/" + time.strftime("%Y-%m-%d_%H-%M"))
-    writer = SummaryWriter(log_name)
-
     if args.evaluate:
         print("\nEVALUATE before starting training: ")
         util.validate(eval_loader,
@@ -325,7 +308,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                 'optimizer' : optimizer.state_dict(),
                             },
                             prec,
-                            model_name)
+                            model_name + str(epoch))
 
                     print("=" * 50)
 
@@ -490,12 +473,6 @@ class DeepAtrophyTrainLauncher:
             '--test-pairs',
             default="",
             help='A csv file containing pairs of test data'
-        )
-
-        parse.add_argument(
-            '--trt-pairs',
-            default="",
-            help='A csv file containing pairs of test-retest data'
         )
 
         parse.add_argument(

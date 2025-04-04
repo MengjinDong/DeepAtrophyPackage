@@ -25,6 +25,7 @@ from . import data_aug_cpu
 from itertools import permutations
 import nibabel as nib
 import pandas as pd
+from nilearn.image import resample_img
 
 # Ignore warnings
 import warnings
@@ -90,7 +91,7 @@ class LongitudinalDataset3D(Dataset):
 
         label_time_interval = float(self.image_frame.iloc[idx]["label_time_interval"])
         subjectID = self.image_frame.iloc[idx]["subjectID"]
-        side = self.image_frame.iloc[idx]["side"]
+        side = self.image_frame.iloc[idx]["side"] if "side" in self.image_frame.columns else ""
 
         random_bl1 = ''.join(random_bl1)
         random_fu1 = self.image_frame.iloc[idx]["fu_fname1"]
@@ -100,13 +101,52 @@ class LongitudinalDataset3D(Dataset):
         random_fu2 = self.image_frame.iloc[idx]["fu_fname2"]
         random_mask2 = self.image_frame.iloc[idx]["seg_fname2"]
 
-        bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
-        fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
-        mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        # load images
+        # bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
+        # fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
+        # if os.path.exists(random_mask1):
+        #     mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        # else:
+        #     mask_cube1 = (bl_cube1 > 0).astype(float)
 
-        bl_cube2 = nib.load(random_bl2).get_fdata().squeeze()
-        fu_cube2 = nib.load(random_fu2).get_fdata().squeeze()
-        mask_cube2 = nib.load(random_mask2).get_fdata().squeeze()
+        # bl_cube2 = nib.load(random_bl2).get_fdata().squeeze()
+        # fu_cube2 = nib.load(random_fu2).get_fdata().squeeze()
+        # if os.path.exists(random_mask2):
+        #     mask_cube2 = nib.load(random_mask2).get_fdata().squeeze()
+        # else:
+        #     mask_cube2 = (bl_cube2 > 0).astype(float)
+
+        ########### downsample image after loading
+        bl_cube1_nii = nib.load(random_bl1)
+        downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+        bl_cube1 = downsampled_bl_cube1.get_fdata().squeeze()
+
+        fu_cube1_nii = nib.load(random_fu1)
+        downsampled_fu_cube1 = resample_img(fu_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+        fu_cube1 = downsampled_fu_cube1.get_fdata().squeeze()
+
+        if os.path.exists(random_mask1):
+            mask_cube1_nii = nib.load(random_mask1)
+            downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
+        else:
+            mask_cube1 = (bl_cube1 > 0).astype(float)
+
+        bl_cube2_nii = nib.load(random_bl2)
+        downsampled_bl_cube2 = resample_img(bl_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+        bl_cube2 = downsampled_bl_cube2.get_fdata().squeeze()
+
+        fu_cube2_nii = nib.load(random_fu2)
+        downsampled_fu_cube2 = resample_img(fu_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+        fu_cube2 = downsampled_fu_cube2.get_fdata().squeeze()
+
+        if os.path.exists(random_mask2):
+            mask_cube2_nii = nib.load(random_mask2)
+            downsampled_mask_cube2 = resample_img(mask_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            mask_cube2 = downsampled_mask_cube2.get_fdata().squeeze()
+        else:
+            mask_cube2 = (bl_cube2 > 0).astype(float)
+        ########### end downsample image after loading
 
         # print("len_image_list = ", len(image_list))
 
@@ -214,7 +254,7 @@ class LongitudinalDataset3DPair(Dataset):
         label_date_diff1 = float(self.image_frame.iloc[idx]["label_date_diff1"])
 
         subjectID = self.image_frame.iloc[idx]["subjectID"]
-        side = self.image_frame.iloc[idx]["side"]
+        side = self.image_frame.iloc[idx]["side"] if "side" in self.image_frame.columns else ""
 
         random_bl1 = ''.join(random_bl1)
         random_fu1 = self.image_frame.iloc[idx]["fu_fname1"]
