@@ -146,20 +146,16 @@ class GlobalAlignmentLauncher:
     def __init__(self, parse):
 
         # Add the arguments
-        parse.add_argument('--baseline-image', metavar='baseline_image', 
-                           type=pathlib.Path, 
+        parse.add_argument('--baseline-image', metavar='baseline_image', type=pathlib.Path, 
                            help='filename of the baseline image')
-        parse.add_argument('--followup-image', metavar='followup_image', 
-                           type=pathlib.Path, 
+        parse.add_argument('--followup-image', metavar='followup_image', type=pathlib.Path, 
                            help=' filename of the followup image')
         parse.add_argument('--prefix', metavar='prefix', type=str, 
                            help='Prefix for the output files. Default is None.')
-        parse.add_argument('--template-image', metavar='template_image', 
-                           type=pathlib.Path, 
+        parse.add_argument('--template-image', metavar='template_image', type=pathlib.Path, 
                            default="/data/mengjin/DeepAtrophyPackage/DeepAtrophy/template/template.nii.gz",
                            help='Template file of the hippocampus image.')
-        parse.add_argument('--template-mask', metavar='template_mask', 
-                           type=pathlib.Path, 
+        parse.add_argument('--template-mask', metavar='template_mask', type=pathlib.Path, 
                            default="/data/mengjin/DeepAtrophyPackage/DeepAtrophy/template/refspace_meanseg_left.nii.gz",
                            help='Template file of the hippocampus mask.')
         parse.add_argument('--get-ROI', action='store_true',

@@ -37,8 +37,15 @@ from . import generate_model
 # from .param import parse_opts
 import csv
 
-# import matplotlib
-# matplotlib.use('qt5agg') # MUST BE CALLED BEFORE IMPORTING plt, or qt5agg
+import matplotlib
+matplotlib.use('Agg') # MUST BE CALLED BEFORE IMPORTING plt, or qt5agg
+
+# import debugpy
+
+# debugpy.listen(("localhost", 5678))
+# print("⏳ Waiting for debugger to attach...")
+# debugpy.wait_for_client()
+# # debugpy.breakpoint()  # Optional, stops here
 
 def main(args):
 
@@ -46,7 +53,8 @@ def main(args):
     # if name.islower() and not name.startswith("__")
     # and callable(models.__dict__[name]))
 
-    global best_prec1 = 0
+    global best_prec1
+    best_prec1 = 0
 
     print("ROOT is ", args.ROOT)
 
@@ -185,7 +193,7 @@ def main_worker(gpu, ngpus_per_node, args):
     # Data loading code
     traingroup = ["train"]
 
-    train_augment = ['normalize', 'flip', 'crop'] # 'rotate',
+    train_augment = ['normalize', 'flip', 'crop', 'rotate'] # 
     test_augment = ['normalize', 'crop']
     eval_augment = ['normalize', 'crop']
 
@@ -201,6 +209,8 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         model_name = save_folder + "_" + time.strftime("%Y-%m-%d_%H-%M")+ \
                      traingroup[0]
+
+    print("Model name is ", model_name)
 
     log_name = (args.ROOT
                 + "/log/"
@@ -328,7 +338,7 @@ def main_worker(gpu, ngpus_per_node, args):
                         'optimizer' : optimizer.state_dict(),
                     },
                     is_best,
-                    model_name)
+                    model_name + str(epoch))
 
     if args.test:
         print("\nTEST: ")
@@ -452,7 +462,7 @@ class DeepAtrophyTrainLauncher:
         )
 
         parse.add_argument(
-            '--resume_all',
+            '--resume-all',
             default='',
             help='path to the latest checkpoint (default: none)'
         )
@@ -539,7 +549,7 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '-b', '--batch-size',
-            default=15,
+            default=60,
             type=int,  # 300 (for convnet) or 60 (for resnet)
             metavar='N', help='mini-batch size (default: 20)'
         )
@@ -561,7 +571,7 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '--lr', '--learning-rate',
-            default=0.001,
+            default=0.0001,
             type=float,
             metavar='LR',
             help='initial learning rate'
@@ -569,7 +579,7 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '--epochs',
-            default=15,
+            default=85,
             type=int,
             metavar='N',
             help='number of total epochs to run for the categorical regression'

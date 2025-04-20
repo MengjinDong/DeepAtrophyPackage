@@ -26,12 +26,16 @@ from itertools import permutations
 import nibabel as nib
 import pandas as pd
 from nilearn.image import resample_img
+import matplotlib.pyplot as plt
 
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
 
-# plt.ion()   # interactive mode
+import matplotlib
+matplotlib.use('Agg') # MUST BE CALLED BEFORE IMPORTING plt, or qt5agg
+
+plt.ion()   # interactive mode
 
 
 class LongitudinalDataset3D(Dataset):
@@ -61,6 +65,7 @@ class LongitudinalDataset3D(Dataset):
         self.max_angle = max_angle
         self.rotate_prob = rotate_prob
         self.output_size = output_size
+        self.downsample_factor = 2
 
         # with open(csv_list, 'r') as f:
         #     reader = csv.reader(f)
@@ -91,15 +96,17 @@ class LongitudinalDataset3D(Dataset):
 
         label_time_interval = float(self.image_frame.iloc[idx]["label_time_interval"])
         subjectID = self.image_frame.iloc[idx]["subjectID"]
+        # side = self.image_frame.iloc[idx]["side"]
         side = self.image_frame.iloc[idx]["side"] if "side" in self.image_frame.columns else ""
+
 
         random_bl1 = ''.join(random_bl1)
         random_fu1 = self.image_frame.iloc[idx]["fu_fname1"]
-        random_mask1 = self.image_frame.iloc[idx]["seg_fname1"]
+        random_mask1 = str(self.image_frame.iloc[idx]["seg_fname1"])
 
         random_bl2 = ''.join(random_bl2)
         random_fu2 = self.image_frame.iloc[idx]["fu_fname2"]
-        random_mask2 = self.image_frame.iloc[idx]["seg_fname2"]
+        random_mask2 = str(self.image_frame.iloc[idx]["seg_fname2"])
 
         # load images
         # bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
@@ -130,7 +137,7 @@ class LongitudinalDataset3D(Dataset):
             downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
             mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
         else:
-            mask_cube1 = (bl_cube1 > 0).astype(float)
+            mask_cube1 = (bl_cube1 > 50).astype(float)
 
         bl_cube2_nii = nib.load(random_bl2)
         downsampled_bl_cube2 = resample_img(bl_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
@@ -145,7 +152,7 @@ class LongitudinalDataset3D(Dataset):
             downsampled_mask_cube2 = resample_img(mask_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
             mask_cube2 = downsampled_mask_cube2.get_fdata().squeeze()
         else:
-            mask_cube2 = (bl_cube2 > 0).astype(float)
+            mask_cube2 = (bl_cube2 > 50).astype(float)
         ########### end downsample image after loading
 
         # print("len_image_list = ", len(image_list))
@@ -175,6 +182,26 @@ class LongitudinalDataset3D(Dataset):
         fu_cube1 = image_list1[1]
         bl_cube2 = image_list2[0]
         fu_cube2 = image_list2[1]
+
+        # # Create a subplot with 2x2 layout
+        # fig, axes = plt.subplots(2, 4, figsize=(10, 6))
+
+        # image_3d = [bl_cube1, fu_cube1, bl_cube1 - fu_cube1, mask_cube1, \
+        #             bl_cube2, fu_cube2, bl_cube2 - fu_cube2, mask_cube2]
+        
+        # title = ["BL1", "FU1", "BL1-FU1", "mask1", "BL2", "FU2", "BL2-FU2", "mask2"]
+
+        # # Plot each slice in grayscale
+        # for i, ax in enumerate(axes.flat):
+        #     ax.imshow(image_3d[i][24, :, :], cmap="gray")  # Show the slice
+        #     ax.set_title(f"{title[i]}")
+        #     ax.axis("off")  # Hide axes
+
+        # # Adjust layout and display
+        # # plt.tight_layout()
+        # plt.show()
+        # plt.savefig(f"/home/mengjin/Documents/ADNI_Whole_brain/test_output{idx}.png")
+        # print(f"Saved plot to test_output{idx}.png")
 
 
         bl_cube1 = torch.from_numpy(bl_cube1[np.newaxis, :, :, :].copy()).float()
@@ -234,10 +261,13 @@ class LongitudinalDataset3DPair(Dataset):
         self.max_angle = max_angle
         self.rotate_prob = rotate_prob
         self.output_size = output_size
+        self.downsample_factor = 2
 
-        with open(csv_list, 'r') as f:
-            reader = csv.reader(f)
-            self.image_frame = list(reader)
+        self.image_frame = pd.read_csv(csv_list)
+
+        # with open(csv_list, 'r') as f:
+        #     reader = csv.reader(f)
+        #     self.image_frame = list(reader)
 
     def __len__(self):
         return len(self.image_frame)
@@ -254,15 +284,37 @@ class LongitudinalDataset3DPair(Dataset):
         label_date_diff1 = float(self.image_frame.iloc[idx]["label_date_diff1"])
 
         subjectID = self.image_frame.iloc[idx]["subjectID"]
+        # side = self.image_frame.iloc[idx]["side"]
         side = self.image_frame.iloc[idx]["side"] if "side" in self.image_frame.columns else ""
+
 
         random_bl1 = ''.join(random_bl1)
         random_fu1 = self.image_frame.iloc[idx]["fu_fname1"]
-        random_mask1 = self.image_frame.iloc[idx]["seg_fname1"]
+        random_mask1 = str(self.image_frame.iloc[idx]["seg_fname1"])
 
-        bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
-        fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
-        mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        # load images
+        # bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
+        # fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
+        # if os.path.exists(random_mask1):
+        #     mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        # else:
+        #     mask_cube1 = (bl_cube1 > 0).astype(float)
+
+        ########### downsample image after loading
+        bl_cube1_nii = nib.load(random_bl1)
+        downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+        bl_cube1 = downsampled_bl_cube1.get_fdata().squeeze()
+
+        fu_cube1_nii = nib.load(random_fu1)
+        downsampled_fu_cube1 = resample_img(fu_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+        fu_cube1 = downsampled_fu_cube1.get_fdata().squeeze()
+
+        if os.path.exists(random_mask1):
+            mask_cube1_nii = nib.load(random_mask1)
+            downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
+        else:
+            mask_cube1 = (bl_cube1 > 50).astype(float)
 
         if 'normalize' in self.augment:
             [bl_cube1, fu_cube1] = data_aug_cpu.Normalize([bl_cube1, fu_cube1])

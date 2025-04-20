@@ -147,7 +147,7 @@ def parse_opts():
 
     parser.add_argument(
         '-b', '--batch-size',
-        default=15,
+        default=60,
         type=int,  # 300 (for convnet) or 60 (for resnet)
         metavar='N', help='mini-batch size (default: 20)'
     )
@@ -358,8 +358,16 @@ def parse_opts():
         '--manual_seed', default=1, type=int, help='Manually set random seed'
     )
 
+    parser.add_argument(
+        '--pretrain_dir',
+        default="/data/mengjin/MedicalNet/pretrain",
+        type=str,
+        help='Directory of pretrained model'
+    )
+
+
     args = parser.parse_args()
 
-    args.pretrain_path = "/data/mengjin/MedicalNet/pretrain/{}_{}.pth".format(args.model, args.model_depth)
+    args.pretrain_path = "{}/{}_{}.pth".format(args.pretrain_dir, args.model, args.model_depth)
     
     return args

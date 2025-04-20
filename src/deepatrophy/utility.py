@@ -174,6 +174,7 @@ def train(train_loader,
 
     end = time.time()
     for i, sample_batched in enumerate(train_loader):
+        print("new batch!")
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -190,6 +191,19 @@ def train(train_loader,
         # model.train()
         out_t_order1, out_t_order2, out_range = model(sample_batched['image'])
         num_batches = sample_batched['image'].size(0)
+
+        # for name, param in model.named_parameters():
+        #     if param.grad is not None:
+        #     #     print(name, param.grad.abs().mean())
+        #         if name == 'modelA.module.layer1.1.conv1.weight':
+        #             print('conv1.weight', param.grad.abs().mean())
+        #             writer.add_scalar('Train/conv1.weight', param.grad.abs().mean(), epoch)
+        #         if name == 'modelA.module.layer3.1.conv1.weight':
+        #             print('conv2.weight', param.grad.abs().mean())
+        #             writer.add_scalar('Train/conv2.weight', param.grad.abs().mean(), epoch)
+        #     else:
+        #         print(name, 'param.grad is None')
+
 
         loss0 = criterion[0](out_t_order1, sample_batched['label_date_diff1'].long())
         loss1 = criterion[0](out_t_order2, sample_batched['label_date_diff2'].long())
@@ -283,7 +297,8 @@ def validate(val_loader,
         wr.writerow(["bl_fname1", "bl_fname2", "subjectID", "side", "stage", "bl_time1", "bl_time2",
                      "fu_time1", "fu_time2", "date_diff1", "date_diff2", "label_date_diff1", "label_date_diff2",
                      "label_time_interval", "pred_date_diff1", "pred_date_diff2", "pred_time_interval",
-                     "score0", "score1", "score2", "score3", "score4", "score5", ])
+                     "sto1_score0", "sto1_score1", "sto2_score0", "sto2_score1", 
+                     "risi_score0", "risi_score1", "risi_score2", "risi_score3", ])
 
     with torch.no_grad():
         end = time.time()
