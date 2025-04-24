@@ -296,12 +296,42 @@ class LongitudinalDataset3DPair(Dataset):
         random_mask1 = str(self.image_frame.iloc[idx]["seg_fname1"])
 
         # load images
-        # bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
-        # fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
-        # if os.path.exists(random_mask1):
-        #     mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
-        # else:
-        #     mask_cube1 = (bl_cube1 > 0).astype(float)
+        '''
+        bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
+        fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
+        if os.path.exists(random_mask1):
+            mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        else:
+            mask_cube1 = (bl_cube1 > 50).astype(float)
+
+    
+        # # Create a subplot with 2x2 layout
+        # fig, axes = plt.subplots(2, 2, figsize=(10, 6))
+
+        # image_3d = [bl_cube1, fu_cube1, bl_cube1 - fu_cube1, mask_cube1]
+        
+        # title = ["BL1", "FU1", "BL1-FU1", "mask1"]
+
+        # # Plot each slice in grayscale
+        # for i, ax in enumerate(axes.flat):
+        #     slice_2d = image_3d[i][60, :, :]
+
+        #     print(f"slice_2d shape: {slice_2d.shape}, i = {title[i]}")
+        #     print(f"slice_2d min: {np.min(slice_2d)}, i = {title[i]}")
+        #     print(f"slice_2d max: {np.max(slice_2d)}, i = {title[i]}")
+        #     print(f"slice_2d mean: {np.mean(slice_2d)}, i = {title[i]}")
+        #     ax.imshow(slice_2d, cmap="gray", vmin=np.min(slice_2d), vmax=np.max(slice_2d))
+        #     ax.set_title(f"{title[i]}")
+        #     ax.axis("off")  # Hide axes
+
+        # # Adjust layout and display
+        # # plt.tight_layout()
+        # plt.show()
+        # plt.savefig(f"/home/mengjin/Documents/ADNI_Whole_brain/test_output{idx}.png")
+        # print(f"Saved plot to test_output{idx}.png")
+
+        
+        '''
 
         ########### downsample image after loading
         bl_cube1_nii = nib.load(random_bl1)
@@ -318,6 +348,8 @@ class LongitudinalDataset3DPair(Dataset):
             mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
         else:
             mask_cube1 = (bl_cube1 > 50).astype(float)
+
+        # '''
 
         if 'normalize' in self.augment:
             [bl_cube1, fu_cube1] = data_aug_cpu.Normalize([bl_cube1, fu_cube1])
@@ -337,6 +369,32 @@ class LongitudinalDataset3DPair(Dataset):
 
         bl_cube1 = image_list1[0]
         fu_cube1 = image_list1[1]
+        mask_cube1 = image_list1[2]
+
+        # # Create a subplot with 2x2 layout
+        # fig, axes = plt.subplots(2, 2, figsize=(10, 6))
+
+        # image_3d = [bl_cube1, fu_cube1, bl_cube1 - fu_cube1, mask_cube1]
+        
+        # title = ["BL1", "FU1", "BL1-FU1", "mask1"]
+
+        # # Plot each slice in grayscale
+        # for i, ax in enumerate(axes.flat):
+        #     slice_2d = image_3d[i][:, :, 32]
+        #     print(f"slice_2d shape: {slice_2d.shape}, i = {title[i]}")
+        #     print(f"slice_2d min: {np.min(slice_2d)}, i = {title[i]}")
+        #     print(f"slice_2d max: {np.max(slice_2d)}, i = {title[i]}")
+        #     print(f"slice_2d mean: {np.mean(slice_2d)}, i = {title[i]}")
+        #     ax.imshow(slice_2d, cmap="gray", vmin=np.min(slice_2d), vmax=np.max(slice_2d))
+        #     ax.set_title(f"{title[i]}")
+        #     ax.axis("off")  # Hide axes
+
+        # # Adjust layout and display
+        # # plt.tight_layout()
+        # plt.show()
+        # plt.savefig(f"/home/mengjin/Documents/ADNI_Whole_brain/test_output{idx}.png")
+        # print(f"Saved plot to test_output{idx}.png")
+
 
         bl_cube1 = torch.from_numpy(bl_cube1[np.newaxis, :, :, :].copy()).float()
         fu_cube1 = torch.from_numpy(fu_cube1[np.newaxis, :, :, :].copy()).float()
