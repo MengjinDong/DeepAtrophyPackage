@@ -194,8 +194,6 @@ def main_worker(gpu, ngpus_per_node, args):
     
     # Data loading code
     test_augment = ['normalize', 'crop']
-
-    #############################################################################
         
     model_pair = longi_models.ResNet_pair(model.modelA, args.num_date_diff_classes)
     torch.cuda.set_device(args.gpu)
@@ -203,82 +201,89 @@ def main_worker(gpu, ngpus_per_node, args):
 
     model_name = args.resume_all[:-8]
 
-    # load these datasets for test, so use test_augment all the time.
-    train_dataset = long.LongitudinalDataset3D(
-            args.train_double_pairs,
-            test_augment, 
-            args.max_angle,
-            args.rotate_prob,
-            sample_size)
-    
-    eval_dataset = long.LongitudinalDataset3D(
-            args.eval_double_pairs,
-            test_augment,
-            args.max_angle,
-            args.rotate_prob,
-            sample_size)
+    #############################################################################
+    if args.train_double_pairs:
+        # load these datasets for test, so use test_augment all the time.
+        print("=> Test on double pairs for Train Set")
+        train_dataset = long.LongitudinalDataset3D(
+                args.train_double_pairs,
+                test_augment, 
+                args.max_angle,
+                args.rotate_prob,
+                sample_size)
+        
+        if args.distributed:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        else:
+            train_sampler = None
 
-    test_dataset = long.LongitudinalDataset3D(
-            args.test_double_pairs,
-            test_augment,
-            args.max_angle,
-            args.rotate_prob,
-            sample_size)
-
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-    else:
-        train_sampler = None
-
-    train_loader = torch.utils.data.DataLoader(
-            train_dataset,
-            batch_size=args.batch_size,
-            # sampler = train_sampler,
-            num_workers=args.workers, pin_memory=True)
-
-    eval_loader = torch.utils.data.DataLoader(
-            eval_dataset,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=args.workers, pin_memory=True)
-
-    test_loader = torch.utils.data.DataLoader(
-            test_dataset,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=args.workers, pin_memory=True)
-    
-
-    prec = util.validate(eval_loader,
+        train_loader = torch.utils.data.DataLoader(
+                train_dataset,
+                batch_size=args.batch_size,
+                # sampler = train_sampler,
+                num_workers=args.workers, pin_memory=True)
+        
+        util.validate(train_loader,
                         model,
                         criterion,
-                        model_name + "_eval",
-                        range_weight = args.range_weight)
-    
-    print("\nTEST: ")
-    util.validate(test_loader,
+                        model_name + "_train_double_pair",
+                        range_weight=args.range_weight)
+        
+    if args.eval_double_pairs:
+        
+        print("=> Test on double pairs for Validate Set")
+        eval_dataset = long.LongitudinalDataset3D(
+                args.eval_double_pairs,
+                test_augment,
+                args.max_angle,
+                args.rotate_prob,
+                sample_size)
+        
+        eval_loader = torch.utils.data.DataLoader(
+                eval_dataset,
+                batch_size=args.batch_size,
+                shuffle=True,
+                num_workers=args.workers, pin_memory=True)
+        
+        prec = util.validate(eval_loader,
                     model,
                     criterion,
-                    model_name + "_test",
-                    range_weight=args.range_weight)
+                    model_name + "_eval_double_pair",
+                    range_weight = args.range_weight)
+        
+    if args.test_double_pairs:
 
-    print("\nEvaluation on Train Set: ")
-    util.validate(train_loader,
-                    model,
-                    criterion,
-                    model_name + "_train",
-                    range_weight=args.range_weight)
+        print("=> Test on double pairs for Test Set")
+        test_dataset = long.LongitudinalDataset3D(
+                args.test_double_pairs,
+                test_augment,
+                args.max_angle,
+                args.rotate_prob,
+                sample_size)
+
+        test_loader = torch.utils.data.DataLoader(
+                test_dataset,
+                batch_size=args.batch_size,
+                shuffle=True,
+                num_workers=args.workers, pin_memory=True)
+        
+        util.validate(test_loader,
+                        model,
+                        criterion,
+                        model_name + "_test_double_pair",
+                        range_weight=args.range_weight)
 
 
-    #############################################################################################################
+    ################################################################################################
 
     # test on only the basic sub-network (STO loss)
     model_pair = longi_models.ResNet_pair(model.modelA, args.num_date_diff_classes)
     torch.cuda.set_device(args.gpu)
     model_pair = model_pair.cuda(args.gpu)
 
-    if args.test_pair:
-
+    if args.train_pairs:
+        
+        print("=> Test on a single image pair for Train Set")
         train_pair_dataset = long.LongitudinalDataset3DPair(
                 args.train_pairs,
                 test_augment,
@@ -291,16 +296,41 @@ def main_worker(gpu, ngpus_per_node, args):
                 batch_size=args.batch_size,
                 shuffle=True,
                 num_workers=args.workers, pin_memory=True)
-
-        print("\nEvaluation on Train Pair Set: ")
-
+        
         util.validate_pair(train_pair_loader,
+                model_pair,
+                criterion,
+                model_name + "_train_pair",
+                epoch=args.epochs,
+                print_freq=args.print_freq)
+
+    if args.eval_pair:
+
+        print("=> Test on a single image pair for Eval Set")
+        eval_pair_dataset = long.LongitudinalDataset3DPair(
+                args.eval_pairs,
+                test_augment,
+                args.max_angle,
+                args.rotate_prob,
+                sample_size)
+
+        eval_pair_loader = torch.utils.data.DataLoader(
+                eval_pair_dataset,
+                batch_size=args.batch_size,
+                shuffle=True,
+                num_workers=args.workers, pin_memory=True)
+
+        util.validate_pair(eval_pair_loader,
                       model_pair,
                       criterion,
-                      model_name + "_train_pair",
+                      model_name + "_eval_pair",
                       args.epochs,
                       args.print_freq)
+        
+        
+    if args.test_pairs:
 
+        print("=> Test on a single image pair for Test Set")
         test_pair_dataset = long.LongitudinalDataset3DPair(
                 args.test_pairs,
                 test_augment,
@@ -313,8 +343,6 @@ def main_worker(gpu, ngpus_per_node, args):
                 batch_size=args.batch_size,
                 shuffle=True,
                 num_workers=args.workers, pin_memory=True)
-
-        print("\nEvaluation on Test Pair Set: ")
 
         util.validate_pair(test_pair_loader,
                       model_pair,
@@ -368,7 +396,7 @@ class DeepAtrophyTestLauncher:
         )
 
         parse.add_argument(
-            '--resume_all',
+            '--resume-all',
             default='',
             help='path to the latest checkpoint (default: none)'
         )
@@ -398,6 +426,24 @@ class DeepAtrophyTestLauncher:
         )
 
         parse.add_argument(
+            '--train-double-pairs',
+            default="",
+            help='A csv file containing pairs of training data'
+        )
+
+        parse.add_argument(
+            '--eval-double-pairs',
+            default="",
+            help='A csv file containing pairs of evaluation data'
+        )
+
+        parse.add_argument(
+            '--test-double-pairs',
+            default="",
+            help='A csv file containing pairs of test data'
+        )
+
+        parse.add_argument(
             '--pretrained',
             dest='pretrained',
             action='store_true',
@@ -418,12 +464,6 @@ class DeepAtrophyTestLauncher:
             dest='test',
             action='store_true',
             help='option to test model after training on test set (not validation set)'
-        )
-
-        parse.add_argument(
-            '--test-pair',
-            action='store_false',
-            help='option to test only the basic sub-network after training on test set (not validation set)'
         )
 
         parse.add_argument(

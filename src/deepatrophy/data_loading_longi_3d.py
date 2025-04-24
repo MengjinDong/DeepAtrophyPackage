@@ -108,21 +108,23 @@ class LongitudinalDataset3D(Dataset):
         random_fu2 = self.image_frame.iloc[idx]["fu_fname2"]
         random_mask2 = str(self.image_frame.iloc[idx]["seg_fname2"])
 
-        # load images
-        # bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
-        # fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
-        # if os.path.exists(random_mask1):
-        #     mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
-        # else:
-        #     mask_cube1 = (bl_cube1 > 0).astype(float)
+        ########### load images
+        # '''
+        bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
+        fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
+        if os.path.exists(random_mask1):
+            mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        else:
+            mask_cube1 = (bl_cube1 > 50).astype(float)
 
-        # bl_cube2 = nib.load(random_bl2).get_fdata().squeeze()
-        # fu_cube2 = nib.load(random_fu2).get_fdata().squeeze()
-        # if os.path.exists(random_mask2):
-        #     mask_cube2 = nib.load(random_mask2).get_fdata().squeeze()
-        # else:
-        #     mask_cube2 = (bl_cube2 > 0).astype(float)
-
+        bl_cube2 = nib.load(random_bl2).get_fdata().squeeze()
+        fu_cube2 = nib.load(random_fu2).get_fdata().squeeze()
+        if os.path.exists(random_mask2):
+            mask_cube2 = nib.load(random_mask2).get_fdata().squeeze()
+        else:
+            mask_cube2 = (bl_cube2 > 50).astype(float)
+        '''
+        
         ########### downsample image after loading
         bl_cube1_nii = nib.load(random_bl1)
         downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
@@ -153,6 +155,7 @@ class LongitudinalDataset3D(Dataset):
             mask_cube2 = downsampled_mask_cube2.get_fdata().squeeze()
         else:
             mask_cube2 = (bl_cube2 > 50).astype(float)
+        # '''
         ########### end downsample image after loading
 
         # print("len_image_list = ", len(image_list))

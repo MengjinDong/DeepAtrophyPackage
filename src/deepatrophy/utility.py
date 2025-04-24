@@ -32,6 +32,7 @@ from itertools import zip_longest
 from .data_aug_gpu import TPSRandomSampler3D
 from matplotlib import pyplot
 from tensorboardX import SummaryWriter
+from datetime import datetime
 
 pyplot.switch_backend('agg')
 
@@ -174,7 +175,7 @@ def train(train_loader,
 
     end = time.time()
     for i, sample_batched in enumerate(train_loader):
-        print("new batch!")
+        print(i, "new batch!",  datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -426,6 +427,7 @@ def validate_pair(val_loader,
              epoch=0,
              writer=None,
              print_freq=20):
+    
     batch_time = AverageMeter()
     data_time = AverageMeter()
 
@@ -509,8 +511,9 @@ def validate_pair(val_loader,
                 wr.writerows(export_data)
             myfile.close()
 
-        writer.add_scalar('Test_pair/Loss(BCE loss for t order)', losses0.avg, epoch)
-        writer.add_scalar('Test_pair/Accuracy t_order', output_date_diff1.avg, epoch)
+        if writer is not None:
+            writer.add_scalar('Test_pair/Loss(BCE loss for t order)', losses0.avg, epoch)
+            writer.add_scalar('Test_pair/Accuracy t_order', output_date_diff1.avg, epoch)
 
         print('Test_pair overall: [{0}]\n'
               'Time {batch_time.val!s:4s} ({batch_time.avg!s:4s})\n'

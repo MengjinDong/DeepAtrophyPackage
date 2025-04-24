@@ -153,8 +153,6 @@ class NeckTrimLauncher:
 
     def __init__(self, parse):
 
-        print("run NeckTrimLauncher")
-
         # Add the arguments
         parse.add_argument('--input-image', metavar='input_image', type=pathlib.Path, 
                         help='filename of input image')

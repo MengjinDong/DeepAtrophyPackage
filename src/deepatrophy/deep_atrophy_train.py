@@ -36,6 +36,7 @@ from tensorboardX import SummaryWriter
 from . import generate_model
 # from .param import parse_opts
 import csv
+import time
 
 import matplotlib
 matplotlib.use('Agg') # MUST BE CALLED BEFORE IMPORTING plt, or qt5agg
@@ -88,11 +89,13 @@ def main(args):
         # Since we have ngpus_per_node processes per node, the total world_size
         # needs to be adjusted accordingly
         ngpus_per_node = len(args.gpu)
+        print("Using multiple gpus for model", ngpus_per_node)
         args.world_size = ngpus_per_node * args.world_size
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
+        print("Using a single gpu for model, gpu id is", args.gpu)
         # Simply call main_worker function
         main_worker(args.gpu, ngpus_per_node, args)
 
@@ -110,6 +113,7 @@ def main_worker(gpu, ngpus_per_node, args):
         print("Current Device is ", torch.cuda.get_device_name(0))
 
     if args.distributed:
+        print("Using parallel cores for training in main worker.")
         if args.dist_url == "env://" and args.rank == -1:
             args.rank = int(os.environ["RANK"])
         if args.multiprocessing_distributed:
@@ -194,6 +198,7 @@ def main_worker(gpu, ngpus_per_node, args):
     traingroup = ["train"]
 
     train_augment = ['normalize', 'flip', 'crop', 'rotate'] # 
+    # train_augment = ['crop'] # 
     test_augment = ['normalize', 'crop']
     eval_augment = ['normalize', 'crop']
 
@@ -250,9 +255,12 @@ def main_worker(gpu, ngpus_per_node, args):
     train_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=args.batch_size,
+            shuffle=True,
             # sampler = train_sampler,
-            num_workers=args.workers, pin_memory=True)
-
+            num_workers=args.workers, 
+            pin_memory=True,
+            persistent_workers=True)
+        
     eval_loader = torch.utils.data.DataLoader(
             eval_dataset,
             batch_size=args.batch_size,
@@ -345,7 +353,7 @@ def main_worker(gpu, ngpus_per_node, args):
         util.validate(test_loader,
                       model,
                       criterion,
-                      model_name + "_test",
+                      model_name + "_test_double_pair",
                       args.epochs,
                       writer,
                       range_weight=args.range_weight)
@@ -354,7 +362,7 @@ def main_worker(gpu, ngpus_per_node, args):
         util.validate(train_loader,
                       model,
                       criterion,
-                      model_name + "_train",
+                      model_name + "_train_double_pair",
                       args.epochs,
                       writer,
                       range_weight=args.range_weight)
@@ -543,13 +551,13 @@ class DeepAtrophyTrainLauncher:
         parse.add_argument(
             '--ROOT',
             metavar='DIR',
-            default="/data/mengjin/DeepAtrophyPackage/DeepAtrophy/DeepAtrophy",
+            default="/data/mengjin/DeepAtrophyPackage",
             help='directory to save models and logs'
         )
 
         parse.add_argument(
             '-b', '--batch-size',
-            default=60,
+            default=60, 
             type=int,  # 300 (for convnet) or 60 (for resnet)
             metavar='N', help='mini-batch size (default: 20)'
         )
@@ -563,15 +571,16 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '-j', '--workers',
-            default=4,
+            default=12,
             type=int,
             metavar='N',
-            help='number of data loading workers (default: 4)'
+            help='number of data loading workers (default: 12)'
+            # num_workers = min(4 * num_gpus, os.cpu_count() // num_gpus)
         )
 
         parse.add_argument(
             '--lr', '--learning-rate',
-            default=0.0001,
+            default=0.001,
             type=float,
             metavar='LR',
             help='initial learning rate'
@@ -579,7 +588,7 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '--epochs',
-            default=85,
+            default=20,
             type=int,
             metavar='N',
             help='number of total epochs to run for the categorical regression'
