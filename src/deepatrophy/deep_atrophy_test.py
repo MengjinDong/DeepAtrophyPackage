@@ -45,11 +45,6 @@ def main(args):
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
 
-    best_prec1 = 0
-
-    # Use a tool at comet.com to keep track of parameters used
-    hyper_params = vars(args)
-
     print("ROOT is ", args.ROOT)
 
     if not os.path.exists(args.ROOT + '/Model'):
@@ -128,7 +123,6 @@ def main_worker(gpu, ngpus_per_node, args):
     criterion1 = torch.nn.CrossEntropyLoss().cuda(args.gpu) # for RISI loss
 
     criterion = [criterion0, criterion1]
-    start_epoch = 0
 
     optimizer = torch.optim.Adam(model.parameters(), args.lr,
                                  betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
@@ -304,7 +298,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 epoch=args.epochs,
                 print_freq=args.print_freq)
 
-    if args.eval_pair:
+    if args.eval_pairs:
 
         print("=> Test on a single image pair for Eval Set")
         eval_pair_dataset = long.LongitudinalDataset3DPair(
@@ -497,7 +491,7 @@ class DeepAtrophyTestLauncher:
 
         parse.add_argument(
             '-j', '--workers',
-            default=4,
+            default=12,
             type=int,
             metavar='N',
             help='number of data loading workers (default: 4)'

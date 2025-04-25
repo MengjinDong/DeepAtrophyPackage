@@ -278,7 +278,7 @@ def main_worker(gpu, ngpus_per_node, args):
         util.validate(eval_loader,
                       model,
                       criterion,
-                      model_name + "_eval",
+                      model_name + "_eval0",
                       writer=writer,
                       range_weight = args.range_weight)
 
@@ -309,7 +309,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 prec = util.validate(eval_loader,
                                      model,
                                      criterion,
-                                     model_name + "_eval",
+                                     model_name + str(epoch) + "_eval_pair",
                                      epoch,
                                      writer,
                                      range_weight = args.range_weight)
@@ -349,20 +349,20 @@ def main_worker(gpu, ngpus_per_node, args):
                     model_name + str(epoch))
 
     if args.test:
-        print("\nTEST: ")
+        print("\n=> Test on double pairs for Test Set")
         util.validate(test_loader,
                       model,
                       criterion,
-                      model_name + "_test_double_pair",
+                      model_name + str(epoch) + "_test_double_pair",
                       args.epochs,
                       writer,
                       range_weight=args.range_weight)
 
-        print("\nEvaluation on Train Set: ")
+        print("\n=> Test on double pairs for Train Set")
         util.validate(train_loader,
                       model,
                       criterion,
-                      model_name + "_train_double_pair",
+                      model_name + str(epoch) + "_train_double_pair",
                       args.epochs,
                       writer,
                       range_weight=args.range_weight)
@@ -389,12 +389,12 @@ def main_worker(gpu, ngpus_per_node, args):
                 shuffle=True,
                 num_workers=args.workers, pin_memory=True)
 
-        print("\nEvaluation on Train Pair Set: ")
+        print("\n=> Test on a single image pair for Train Set")
 
         util.validate_pair(train_pair_loader,
                       model_pair,
                       criterion,
-                      model_name + "_train_pair_update",
+                      model_name + str(epoch) + "_train_pair",
                       args.epochs,
                       writer,
                       args.print_freq)
@@ -412,12 +412,12 @@ def main_worker(gpu, ngpus_per_node, args):
                 shuffle=True,
                 num_workers=args.workers, pin_memory=True)
 
-        print("\nEvaluation on Test Pair Set: ")
+        print("\n=> Test on a single image pair for Test Set")
 
         util.validate_pair(test_pair_loader,
                       model_pair,
                       criterion,
-                      model_name + "_test_pair_update",
+                      model_name + str(epoch) + "_test_pair",
                       args.epochs,
                       writer,
                       args.print_freq)
@@ -627,7 +627,7 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '--eval-freq',
-            default=2,
+            default=1,
             type=int,
             metavar='N',
             help='eval frequency (default: 5)'

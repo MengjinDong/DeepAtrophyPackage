@@ -34,20 +34,23 @@ class PAIIRLauncher:
     def __init__(self, parse):
 
         # Add the arguments
-        parse.add_argument('--train-pair-spreadsheet', metavar='train_spreadsheet.csv', type=pathlib.Path, 
-                           default='/data/mengjin/DeepAtrophyPackage/DeepAtrophy/data/resnet50_2020-07-08_12-39train_0135_train_pair_update.csv',
+        parse.add_argument('--train-pair-spreadsheet', metavar='train_spreadsheet.csv',
+                           type=pathlib.Path, 
+                           default='',
                            help='filename of the train spreadsheet')
-        parse.add_argument('--test-pair-spreadsheet', metavar='test_spreadsheet.csv', type=pathlib.Path, 
-                            default='/data/mengjin/DeepAtrophyPackage/DeepAtrophy/data/resnet50_2020-07-08_12-39train_0135_test_pair_update.csv',
+        parse.add_argument('--test-pair-spreadsheet', metavar='test_spreadsheet.csv', 
+                           type=pathlib.Path, 
+                           default='',
                            help=' filename of the test spreadsheet')
-        parse.add_argument('--test-double-pair-spreadsheet', metavar='spreadsheet to predict STO', type=pathlib.Path, 
-                           default='/data/mengjin/DeepAtrophyPackage/DeepAtrophy/data/resnet50_2020-07-08_12-39train_0135_test.csv',
+        parse.add_argument('--test-double-pair-spreadsheet', metavar='spreadsheet to predict STO', 
+                           type=pathlib.Path, 
+                           default='',
                            help='filename of the spreadsheet for STO prediction')
         parse.add_argument('--prefix', metavar='prefix', type=str, 
-                            default='model_',
+                           default='model_',
                            help='Prefix for the output files. Default is None.')
         parse.add_argument('--workdir', type=str, metavar='/path/to/workdir',
-                            default='/data/mengjin/DeepAtrophyPackage/DeepAtrophy/PAIIR',
+                           default='',
                            help='Location to store intermediate files. Default is system temp directory.')
         parse.add_argument('--debug', action='store_true', 
                            help='Enable verbose/debug mode. Default is False.')
