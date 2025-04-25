@@ -483,7 +483,7 @@ class DeepAtrophyTestLauncher:
 
         parse.add_argument(
             '-b', '--batch-size',
-            default=15,
+            default=60,
             type=int,  # 300 (for convnet) or 60 (for resnet)
             metavar='N', help='mini-batch size (default: 20)'
         )

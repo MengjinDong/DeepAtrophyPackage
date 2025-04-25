@@ -329,8 +329,6 @@ class LongitudinalDataset3DPair(Dataset):
         # plt.show()
         # plt.savefig(f"/home/mengjin/Documents/ADNI_Whole_brain/test_output{idx}.png")
         # print(f"Saved plot to test_output{idx}.png")
-
-        
         '''
 
         ########### downsample image after loading
