@@ -227,7 +227,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     train_dataset = long.LongitudinalDataset3D(
             args.train_double_pairs,
-            train_augment, # advanced transformation: add random rotation
+            train_augment,
             args.max_angle,
             args.rotate_prob,
             sample_size)
@@ -273,7 +273,7 @@ def main_worker(gpu, ngpus_per_node, args):
             shuffle=True,
             num_workers=args.workers, pin_memory=True)
 
-    if args.evaluate:
+    if args.initial_evaluation:
         print("\nEVALUATE before starting training: ")
         util.validate(eval_loader,
                       model,
@@ -284,7 +284,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # training the model
     if start_epoch < args.epochs - 1:
-        print("\nTRAIN: ")
+        print("\nTRAIN on the whole model: ")
         for epoch in range(start_epoch, args.epochs):
             if args.distributed:
                 train_sampler.set_epoch(epoch)
@@ -303,7 +303,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             # evaluate on validation set
             if epoch % args.eval_freq == 0:
-                csv_name = model_name + "_eval.csv"
+                csv_name = model_name + str(epoch) + "_eval_pair.csv"
                 if os.path.isfile(csv_name):
                     os.remove(csv_name)
                 prec = util.validate(eval_loader,
@@ -348,7 +348,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     is_best,
                     model_name + str(epoch))
 
-    if args.test:
+    if args.test_double_pair_flag:
         print("\n=> Test on double pairs for Test Set")
         util.validate(test_loader,
                       model,
@@ -374,7 +374,7 @@ def main_worker(gpu, ngpus_per_node, args):
     torch.cuda.set_device(args.gpu)
     model_pair = model_pair.cuda(args.gpu)
 
-    if args.test_pair:
+    if args.test_pair_flag:
 
         train_pair_dataset = long.LongitudinalDataset3DPair(
                 args.train_pairs,
@@ -513,7 +513,6 @@ class DeepAtrophyTrainLauncher:
 
         parse.add_argument(
             '--pretrained',
-            dest='pretrained',
             action='store_true',
             # can be store_true (pretrained with no modified architecture),
             # store_false (pretrained network with modified architecture)
@@ -521,21 +520,19 @@ class DeepAtrophyTrainLauncher:
         )
 
         parse.add_argument(
-            '-e', '--evaluate',
-            dest='evaluate',
+            '-e', '--initial-evaluation',
             action='store_true',
             help='option to evaluate before starting training'
         )
 
         parse.add_argument(
-            '-t', '--test',
-            dest='test',
-            action='store_true',
+            '-t', '--test-double-pair-flag',
+            action='store_false',
             help='option to test model after training on test set (not validation set)'
         )
 
         parse.add_argument(
-            '--test-pair',
+            '--test-pair-flag',
             action='store_false',
             help='option to test only the basic sub-network after training on test set (not validation set)'
         )
