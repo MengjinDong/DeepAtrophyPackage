@@ -527,7 +527,7 @@ def validate_pair(val_loader,
 
         print(' * Overall Prec@1 {output_date_diff.avg!s:5s}'.format(output_date_diff=output_date_diff1))
 
-        print('num_test_pair = {loss_all.count!s:5s}'.format(loss_all=loss_all))
+        print('num_test_pair = {Loss0.count!s:5s}'.format(Loss0=losses0))
 
     return output_date_diff1.avg
 

@@ -42,7 +42,10 @@ class LongitudinalDataset3D(Dataset):
     """ AD longitudinal dataset."""
 
     def __init__(self, csv_list, augment=None,
-                 max_angle = 0, rotate_prob = 0.5, output_size = [1, 1, 1]):
+                 max_angle = 0, 
+                 rotate_prob = 0.5, 
+                 downsample_factor = 1,
+                 output_size = [1, 1, 1]):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -65,7 +68,7 @@ class LongitudinalDataset3D(Dataset):
         self.max_angle = max_angle
         self.rotate_prob = rotate_prob
         self.output_size = output_size
-        self.downsample_factor = 2
+        self.downsample_factor = downsample_factor
 
         # with open(csv_list, 'r') as f:
         #     reader = csv.reader(f)
@@ -109,54 +112,53 @@ class LongitudinalDataset3D(Dataset):
         random_mask2 = str(self.image_frame.iloc[idx]["seg_fname2"])
 
         ########### load images
-        # '''
-        bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
-        fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
-        if os.path.exists(random_mask1):
-            mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+        if self.downsample_factor == 1:
+            bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
+            fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
+            if os.path.exists(random_mask1):
+                mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+            else:
+                mask_cube1 = (bl_cube1 > 1).astype(float)
+
+            bl_cube2 = nib.load(random_bl2).get_fdata().squeeze()
+            fu_cube2 = nib.load(random_fu2).get_fdata().squeeze()
+            if os.path.exists(random_mask2):
+                mask_cube2 = nib.load(random_mask2).get_fdata().squeeze()
+            else:
+                mask_cube2 = (bl_cube2 > 1).astype(float)
         else:
-            mask_cube1 = (bl_cube1 > 50).astype(float)
+            ########### downsample image after loading
+            bl_cube1_nii = nib.load(random_bl1)
+            downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            bl_cube1 = downsampled_bl_cube1.get_fdata().squeeze()
 
-        bl_cube2 = nib.load(random_bl2).get_fdata().squeeze()
-        fu_cube2 = nib.load(random_fu2).get_fdata().squeeze()
-        if os.path.exists(random_mask2):
-            mask_cube2 = nib.load(random_mask2).get_fdata().squeeze()
-        else:
-            mask_cube2 = (bl_cube2 > 50).astype(float)
-        '''
-        
-        ########### downsample image after loading
-        bl_cube1_nii = nib.load(random_bl1)
-        downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-        bl_cube1 = downsampled_bl_cube1.get_fdata().squeeze()
+            fu_cube1_nii = nib.load(random_fu1)
+            downsampled_fu_cube1 = resample_img(fu_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            fu_cube1 = downsampled_fu_cube1.get_fdata().squeeze()
 
-        fu_cube1_nii = nib.load(random_fu1)
-        downsampled_fu_cube1 = resample_img(fu_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-        fu_cube1 = downsampled_fu_cube1.get_fdata().squeeze()
+            if os.path.exists(random_mask1):
+                mask_cube1_nii = nib.load(random_mask1)
+                downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+                mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
+            else:
+                mask_cube1 = (bl_cube1 > 1).astype(float)
 
-        if os.path.exists(random_mask1):
-            mask_cube1_nii = nib.load(random_mask1)
-            downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-            mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
-        else:
-            mask_cube1 = (bl_cube1 > 50).astype(float)
+            bl_cube2_nii = nib.load(random_bl2)
+            downsampled_bl_cube2 = resample_img(bl_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            bl_cube2 = downsampled_bl_cube2.get_fdata().squeeze()
 
-        bl_cube2_nii = nib.load(random_bl2)
-        downsampled_bl_cube2 = resample_img(bl_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-        bl_cube2 = downsampled_bl_cube2.get_fdata().squeeze()
+            fu_cube2_nii = nib.load(random_fu2)
+            downsampled_fu_cube2 = resample_img(fu_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            fu_cube2 = downsampled_fu_cube2.get_fdata().squeeze()
 
-        fu_cube2_nii = nib.load(random_fu2)
-        downsampled_fu_cube2 = resample_img(fu_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-        fu_cube2 = downsampled_fu_cube2.get_fdata().squeeze()
+            if os.path.exists(random_mask2):
+                mask_cube2_nii = nib.load(random_mask2)
+                downsampled_mask_cube2 = resample_img(mask_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+                mask_cube2 = downsampled_mask_cube2.get_fdata().squeeze()
+            else:
+                mask_cube2 = (bl_cube2 > 1).astype(float)
 
-        if os.path.exists(random_mask2):
-            mask_cube2_nii = nib.load(random_mask2)
-            downsampled_mask_cube2 = resample_img(mask_cube2_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-            mask_cube2 = downsampled_mask_cube2.get_fdata().squeeze()
-        else:
-            mask_cube2 = (bl_cube2 > 50).astype(float)
-        # '''
-        ########### end downsample image after loading
+            ########### end downsample image after loading
 
         # print("len_image_list = ", len(image_list))
 
@@ -248,7 +250,10 @@ class LongitudinalDataset3DPair(Dataset):
     """ AD longitudinal dataset."""
 
     def __init__(self, csv_list, augment=None,
-                 max_angle=0, rotate_prob=0.5, output_size=[1, 1, 1]):
+                 max_angle=0, 
+                 rotate_prob=0.5, 
+                 downsample_factor = 1,
+                 output_size=[1, 1, 1]):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -264,7 +269,7 @@ class LongitudinalDataset3DPair(Dataset):
         self.max_angle = max_angle
         self.rotate_prob = rotate_prob
         self.output_size = output_size
-        self.downsample_factor = 2
+        self.downsample_factor = downsample_factor
 
         self.image_frame = pd.read_csv(csv_list)
 
@@ -296,15 +301,33 @@ class LongitudinalDataset3DPair(Dataset):
         random_mask1 = str(self.image_frame.iloc[idx]["seg_fname1"])
 
         # load images
-        '''
-        bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
-        fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
-        if os.path.exists(random_mask1):
-            mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
-        else:
-            mask_cube1 = (bl_cube1 > 50).astype(float)
+        if self.downsample_factor == 1:
+            bl_cube1 = nib.load(random_bl1).get_fdata().squeeze()
+            fu_cube1 = nib.load(random_fu1).get_fdata().squeeze()
+            if os.path.exists(random_mask1):
+                mask_cube1 = nib.load(random_mask1).get_fdata().squeeze()
+            else:
+                mask_cube1 = (bl_cube1 > 1).astype(float)
 
-    
+        else:
+            ########### downsample image after loading
+            bl_cube1_nii = nib.load(random_bl1)
+            downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            bl_cube1 = downsampled_bl_cube1.get_fdata().squeeze()
+
+            fu_cube1_nii = nib.load(random_fu1)
+            downsampled_fu_cube1 = resample_img(fu_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+            fu_cube1 = downsampled_fu_cube1.get_fdata().squeeze()
+
+            if os.path.exists(random_mask1):
+                mask_cube1_nii = nib.load(random_mask1)
+                downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
+                mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
+            else:
+                mask_cube1 = (bl_cube1 > 1).astype(float)
+
+            ########### end downsample image after loading
+
         # # Create a subplot with 2x2 layout
         # fig, axes = plt.subplots(2, 2, figsize=(10, 6))
 
@@ -329,25 +352,6 @@ class LongitudinalDataset3DPair(Dataset):
         # plt.show()
         # plt.savefig(f"/home/mengjin/Documents/ADNI_Whole_brain/test_output{idx}.png")
         # print(f"Saved plot to test_output{idx}.png")
-        '''
-
-        ########### downsample image after loading
-        bl_cube1_nii = nib.load(random_bl1)
-        downsampled_bl_cube1 = resample_img(bl_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-        bl_cube1 = downsampled_bl_cube1.get_fdata().squeeze()
-
-        fu_cube1_nii = nib.load(random_fu1)
-        downsampled_fu_cube1 = resample_img(fu_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-        fu_cube1 = downsampled_fu_cube1.get_fdata().squeeze()
-
-        if os.path.exists(random_mask1):
-            mask_cube1_nii = nib.load(random_mask1)
-            downsampled_mask_cube1 = resample_img(mask_cube1_nii, target_affine = np.eye(3)*self.downsample_factor, interpolation='continuous')
-            mask_cube1 = downsampled_mask_cube1.get_fdata().squeeze()
-        else:
-            mask_cube1 = (bl_cube1 > 50).astype(float)
-
-        # '''
 
         if 'normalize' in self.augment:
             [bl_cube1, fu_cube1] = data_aug_cpu.Normalize([bl_cube1, fu_cube1])

@@ -204,6 +204,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment, 
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
         
         if args.distributed:
@@ -231,6 +232,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
         
         eval_loader = torch.utils.data.DataLoader(
@@ -253,6 +255,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
 
         test_loader = torch.utils.data.DataLoader(
@@ -283,6 +286,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
 
         train_pair_loader = torch.utils.data.DataLoader(
@@ -306,6 +310,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
 
         eval_pair_loader = torch.utils.data.DataLoader(
@@ -318,8 +323,8 @@ def main_worker(gpu, ngpus_per_node, args):
                       model_pair,
                       criterion,
                       model_name + "_eval_pair",
-                      args.epochs,
-                      args.print_freq)
+                      epoch=args.epochs,
+                      print_freq=args.print_freq)
         
         
     if args.test_pairs:
@@ -330,6 +335,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
 
         test_pair_loader = torch.utils.data.DataLoader(
@@ -342,8 +348,8 @@ def main_worker(gpu, ngpus_per_node, args):
                       model_pair,
                       criterion,
                       model_name + "_test_pair",
-                      args.epochs,
-                      args.print_freq)
+                      epoch=args.epochs,
+                      print_freq=args.print_freq)
 
 
 class DeepAtrophyTestLauncher:
@@ -466,6 +472,13 @@ class DeepAtrophyTestLauncher:
             type=int,
             metavar='N',
             help='weight of range loss'
+        )
+
+        parse.add_argument(
+            '--downsample-factor',
+            default=1,
+            type=float,
+            help='downsample factor of the input image'
         )
 
         parse.add_argument(

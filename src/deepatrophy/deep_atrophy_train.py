@@ -41,12 +41,6 @@ import time
 import matplotlib
 matplotlib.use('Agg') # MUST BE CALLED BEFORE IMPORTING plt, or qt5agg
 
-# import debugpy
-
-# debugpy.listen(("localhost", 5678))
-# print("⏳ Waiting for debugger to attach...")
-# debugpy.wait_for_client()
-# # debugpy.breakpoint()  # Optional, stops here
 
 def main(args):
 
@@ -209,7 +203,8 @@ def main_worker(gpu, ngpus_per_node, args):
     model_pair = model_pair.cuda(args.gpu)
 
     if args.resume_all:
-        model_name = args.resume_all[:-8]
+        i = args.resume_all.index("train") + len("train")
+        model_name = args.resume_all[:i]
 
     else:
         model_name = save_folder + "_" + time.strftime("%Y-%m-%d_%H-%M")+ \
@@ -230,6 +225,7 @@ def main_worker(gpu, ngpus_per_node, args):
             train_augment,
             args.max_angle,
             args.rotate_prob,
+            args.downsample_factor,
             sample_size)
     
     eval_dataset = long.LongitudinalDataset3D(
@@ -237,6 +233,7 @@ def main_worker(gpu, ngpus_per_node, args):
             eval_augment,
             args.max_angle,
             args.rotate_prob,
+            args.downsample_factor,
             sample_size)
 
     test_dataset = long.LongitudinalDataset3D(
@@ -244,6 +241,7 @@ def main_worker(gpu, ngpus_per_node, args):
             test_augment,
             args.max_angle,
             args.rotate_prob,
+            args.downsample_factor,
             sample_size)
 
 
@@ -303,13 +301,13 @@ def main_worker(gpu, ngpus_per_node, args):
 
             # evaluate on validation set
             if epoch % args.eval_freq == 0:
-                csv_name = model_name + str(epoch) + "_eval_pair.csv"
+                csv_name = model_name + str(epoch) + "_eval_double_pair.csv"
                 if os.path.isfile(csv_name):
                     os.remove(csv_name)
                 prec = util.validate(eval_loader,
                                      model,
                                      criterion,
-                                     model_name + str(epoch) + "_eval_pair",
+                                     model_name + str(epoch) + "_eval_double_pair",
                                      epoch,
                                      writer,
                                      range_weight = args.range_weight)
@@ -381,6 +379,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
 
         train_pair_loader = torch.utils.data.DataLoader(
@@ -404,6 +403,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 test_augment,
                 args.max_angle,
                 args.rotate_prob,
+                args.downsample_factor,
                 sample_size)
 
         test_pair_loader = torch.utils.data.DataLoader(
@@ -543,6 +543,13 @@ class DeepAtrophyTrainLauncher:
             type=int,
             metavar='N',
             help='weight of range loss'
+        )
+
+        parse.add_argument(
+            '--downsample-factor',
+            default=1,
+            type=float,
+            help='downsample factor of the input image'
         )
 
         parse.add_argument(
