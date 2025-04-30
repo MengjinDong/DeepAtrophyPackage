@@ -58,6 +58,11 @@ class PAIIRLauncher:
                            help='Minimum date difference to consider. Default is 180 days.')
         parse.add_argument('--max-date', default=400, type=int, metavar='N2',
                            help='Minimum date difference to consider. Default is 400 days.')
+        parse.add_argument('--stage-order', nargs="+", type=str, 
+                            default=["A-CU", "A+CU", "A+eMCI", "A+lMCI"], 
+                            help='Stage orders for the analysis. Default is A- CU, A+ CU, A+ eMCI, A+ lMCI.')
+        parse.add_argument('--date-format', default="%m/%d/%y %H:%M", type=str,
+                            help='Date format for the input files. Default is %Y-%m-%d.')
         
 
         # Set the function to run
@@ -66,6 +71,9 @@ class PAIIRLauncher:
     def run(self, args):
 
         self.args = args 
+
+        if not os.path.exists(self.args.workdir):
+            os.makedirs(self.args.workdir)
 
         # preprocessing, read spreadsheet
         self.read_and_organize()
@@ -97,8 +105,12 @@ class PAIIRLauncher:
             'pred_date_diff1': 'pred_date_diff'
         })
 
-        # Subset the data for stage == 0
-        train_spreadsheet0 = self.train_pair[self.train_pair['stage'] == 0]
+        print("existing train stages", self.train_pair['stage'] .unique())
+        print("specified stage orders", self.args.stage_order)
+
+
+        # Subset the data for stage == self.args.stage_order[0], which is the control group
+        train_spreadsheet0 = self.train_pair[self.train_pair['stage'] == self.args.stage_order[0]]
 
         # Load the test pair CSV
         self.test_pair = pd.read_csv(self.args.test_pair_spreadsheet)
@@ -183,11 +195,12 @@ class PAIIRLauncher:
             'STO_overall_accuracy': cnn_overall_accuracy,
             'STO_confusion_matrix': cnn_confusion_matrix_serializable
         }
-
-        with open(self.args.workdir + '/accuracy.json', 'w') as json_file:
+        
+        with open(f"{self.args.workdir}/accuracy_{self.args.min_date}_{self.args.max_date}.json", 'w') as json_file:
             json.dump(self.accuracies, json_file, indent=4)
 
         return
+
 
     def RISI_accuracy(self):
 
@@ -199,18 +212,15 @@ class PAIIRLauncher:
         self.test_double_pair['side'] = self.test_double_pair['side'].astype(str)
         self.test_pair['side'] = self.test_pair['side'].astype(str)
 
-        self.test_double_pair['stage'] = self.test_double_pair['stage'].astype(int)
-        self.test_pair['stage'] = self.test_pair['stage'].astype(int)
+        self.test_double_pair['bl_time1'] = pd.to_datetime(self.test_double_pair['bl_time1'], format=self.args.date_format)
+        self.test_double_pair['fu_time1'] = pd.to_datetime(self.test_double_pair['fu_time1'], format=self.args.date_format)
 
-        self.test_double_pair['bl_time1'] = pd.to_datetime(self.test_double_pair['bl_time1'], format="%m/%d/%y %H:%M")
-        self.test_double_pair['fu_time1'] = pd.to_datetime(self.test_double_pair['fu_time1'], format="%m/%d/%y %H:%M")
-
-        self.test_double_pair['bl_time2'] = pd.to_datetime(self.test_double_pair['bl_time2'], format="%m/%d/%y %H:%M")
-        self.test_double_pair['fu_time2'] = pd.to_datetime(self.test_double_pair['fu_time2'], format="%m/%d/%y %H:%M")
+        self.test_double_pair['bl_time2'] = pd.to_datetime(self.test_double_pair['bl_time2'], format=self.args.date_format)
+        self.test_double_pair['fu_time2'] = pd.to_datetime(self.test_double_pair['fu_time2'], format=self.args.date_format)
 
 
-        self.test_pair['bl_time1'] = pd.to_datetime(self.test_pair['bl_time1'], format="%m/%d/%y %H:%M")
-        self.test_pair['fu_time1'] = pd.to_datetime(self.test_pair['fu_time1'], format="%m/%d/%y %H:%M")
+        self.test_pair['bl_time1'] = pd.to_datetime(self.test_pair['bl_time1'], format=self.args.date_format)
+        self.test_pair['fu_time1'] = pd.to_datetime(self.test_pair['fu_time1'], format=self.args.date_format)
 
         test_double_pair1 = self.test_double_pair.merge(self.test_pair, on=["subjectID", "side", "stage", "bl_time1", "fu_time1"]) \
                                     .rename(columns={'CNN_date_diff': 'CNN_date_diff1'})
@@ -265,12 +275,13 @@ class PAIIRLauncher:
         self.accuracies['RISI_overall_accuracy'] = cnn_overall_accuracy
         self.accuracies['RISI_confusion_matrix'] = cnn_confusion_matrix_serializable
 
-        with open(self.args.workdir + '/accuracy.json', 'w') as json_file:
+        with open(f"{self.args.workdir}/accuracy_{self.args.min_date}_{self.args.max_date}.json", 'w') as json_file:
             json.dump(self.accuracies, json_file, indent=4)  
         
         print("\n manual calculation of confusion matrix")
 
-        test_double_pair2.to_csv(self.args.workdir + '/test_double_pair2.csv', index=False)
+        test_double_pair2.to_csv(
+             f"{self.args.workdir}/test_double_pair2_{self.args.min_date}_{self.args.max_date}.csv", index=False)
         
         # Iterate through each unique stage
         for stage in test_double_pair2['stage'].unique():
@@ -297,7 +308,8 @@ class PAIIRLauncher:
         common_subj_2 = self.test_pair.copy()
 
         # save csv file
-        common_subj_2.to_csv(self.args.workdir + '/common_subj_2.csv', index=False)
+        common_subj_2.to_csv(
+            f"{self.args.workdir}/common_subj_2_{self.args.min_date}_{self.args.max_date}.csv", index=False)
 
         # Update columns conditionally based on the value of date_diff_true
         common_subj_2["bl_time"] = common_subj_2.apply(
@@ -360,40 +372,46 @@ class PAIIRLauncher:
         print("weighted_atrophy.head()")
         print(self.weighted_atrophy.head())
 
-        self.weighted_atrophy.to_csv(self.args.workdir + '/weighted_atrophy.csv', index=False)
+        self.weighted_atrophy.to_csv(
+            f"{self.args.workdir}/weighted_atrophy_{self.args.min_date}_{self.args.max_date}.csv", index=False)
 
         return
+
 
     def plot_PAIIR(self):
         
         # Grouping by stage and calculating the mean of weighted_atrophy
 
-        stage_labels = {0: "A- CU", 1: "A+ CU", 3: "A+ eMCI", 5: "A+ lMCI"}
-        stage_order = ["A- CU", "A+ CU", "A+ eMCI", "A+ lMCI"]
+        # stage_labels = {"tensor(0)": "A- CU", 
+        #                 "tensor(1)": "A+ CU", 
+        #                 "tensor(3)": "A+ eMCI", 
+        #                 "tensor(5)": "A+ lMCI"}
 
-        self.weighted_atrophy['stage'] = self.weighted_atrophy['stage'].map(stage_labels)
+        # self.weighted_atrophy['stage'] = self.weighted_atrophy['stage'].map(stage_labels)
 
         mean_se = self.weighted_atrophy.groupby('stage')['DA_Atrophy'].agg(
             mean='mean', 
             se=lambda x: np.std(x, ddof=1) / np.sqrt(len(x))  # Standard error
-        ).reindex(stage_order).reset_index()
+        ).reindex(self.args.stage_order).reset_index()
 
-        print("mean_se", mean_se)
+        print("mean_se: \n", mean_se)
 
         # Create a bar plot
         plt.figure(figsize=(8, 6))
         sns.set_palette("Paired")  # Brighter color palette
 
-        bar_plot = sns.barplot(x='stage', y='mean', data=mean_se, order=stage_order, ci=None)
+        bar_plot = sns.barplot(x='stage', y='mean', data=mean_se, order=self.args.stage_order, ci=None)
 
 
         plt.errorbar(x=range(len(mean_se)), y=mean_se['mean'], yerr=mean_se['se'], fmt='none', c='black', capsize=5)
 
         # Perform t-tests for each group against "A- CU" and display p-values
-        base_group = self.weighted_atrophy[self.weighted_atrophy['stage'] == "A- CU"]['DA_Atrophy']
-        for idx, stage in enumerate(stage_order[1:]):  # Skip the base group itself
+        base_group = self.weighted_atrophy[self.weighted_atrophy['stage'] == self.args.stage_order[0] ]['DA_Atrophy']
+        for idx, stage in enumerate(self.args.stage_order[1:]):  # Skip the base group itself
             comparison_group = self.weighted_atrophy[self.weighted_atrophy['stage'] == stage]['DA_Atrophy']
             _, p_value = stats.ttest_ind(base_group, comparison_group)
+
+            print(f"t-test for {stage} vs {self.args.stage_order[0]}: p-value = {p_value:.4f}")
             
             # Format p-value in scientific notation
             p_text = f"p = {p_value:.1e}"
@@ -403,11 +421,11 @@ class PAIIRLauncher:
         plt.title('Mean Weighted PAIIR by Diagnosis (Comparing with A- CU)')
         plt.xlabel('Diagnosis')
         plt.ylabel('Weighted PAIIR (mean ± SE)')
-        plt.xticks(ticks=range(len(stage_order)), labels=stage_order, rotation=45)
+        plt.xticks(ticks=range(len(self.args.stage_order)), labels=self.args.stage_order, rotation=45)
         # plt.ylim(0, max(mean_values['DA_Atrophy']) + 0.1)  # Adjust y limit for p-value display
 
         # Show the plot
         plt.show()
 
-        plt.savefig(self.args.workdir + '/PAIIR_group_diff.png')
+        plt.savefig(f"{self.args.workdir}/PAIIR_group_diff{self.args.min_date}_{self.args.max_date}.png")
 
